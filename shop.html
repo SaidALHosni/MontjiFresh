@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Shop · Montji</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">🍽️ Montji</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div id="nav" class="collapse navbar-collapse">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a href="shop.html" class="nav-link">Shop</a></li>
+        <li class="nav-item"><a href="cart.html" class="nav-link">Cart</a></li>
+      </ul>
+      <span id="navRole" class="badge bg-secondary me-2 badge-role"></span>
+      <a id="navDashboard" href="dashboard.html" class="btn btn-sm btn-outline-secondary me-2" style="display:none;">Dashboard</a>
+      <a id="navLogin" href="login.html" class="btn btn-sm btn-outline-primary me-2">Login</a>
+      <button id="navLogout" class="btn btn-sm btn-outline-danger" style="display:none;">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<section class="container py-4">
+  <h1 class="h3 mb-3">Shop</h1>
+  <div class="row g-2 mb-3">
+    <div class="col-md-4">
+      <input id="q" class="form-control" placeholder="Search dishes...">
+    </div>
+    <div class="col-md-3">
+      <select id="filterType" class="form-select"></select>
+    </div>
+    <div class="col-md-3">
+      <select id="filterCity" class="form-select"></select>
+    </div>
+    <div class="col-md-2 d-grid">
+      <button id="btnSearch" class="btn btn-primary">Search</button>
+    </div>
+  </div>
+
+  <div id="grid" class="row g-3"></div>
+</section>
+
+<script>
+const state = loadState();
+const user = currentUser(state);
+const qInput = document.getElementById('q');
+const urlQ = new URLSearchParams(location.search).get('q') || "";
+qInput.value = urlQ;
+
+const types = ["All", ...Array.from(new Set(state.dishes.map(d=>d.foodType)))];
+const cities = ["All", ...Array.from(new Set(state.dishes.map(d=>d.city)))];
+
+const typeSel = document.getElementById('filterType');
+const citySel = document.getElementById('filterCity');
+typeSel.innerHTML = types.map(t=>`<option>${t}</option>`).join("");
+citySel.innerHTML = cities.map(c=>`<option>${c}</option>`).join("");
+
+function render() {
+  const q = qInput.value.trim().toLowerCase();
+  const t = typeSel.value || "All";
+  const c = citySel.value || "All";
+  const res = state.dishes.filter(d =>
+    (t==="All" || d.foodType===t) &&
+    (c==="All" || d.city===c) &&
+    (q==="" || d.title.toLowerCase().includes(q))
+  );
+  const grid = document.getElementById('grid');
+  grid.innerHTML = "";
+  res.forEach(d => {
+    const col = document.createElement('div');
+    col.className = "col-sm-6 col-lg-4";
+    col.innerHTML = `
+      <div class="card h-100 card-hover" data-aos="fade-up">
+        <img src="${d.image}" class="card-img-top" style="height:180px; object-fit:cover;">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">${d.title}</h5>
+          <div class="small text-muted">${d.foodType} · ${d.city}</div>
+          <div class="mt-2 fw-semibold">${d.price} ${state.settings.currency}</div>
+          ${d.availableAtShopOwnerId ? `<span class="badge bg-info mt-2">Available in businessman shop</span>` : ``}
+          <div class="mt-auto">
+            <div class="input-group input-group-sm my-2">
+              <select class="form-select" id="size-${d.id}">${(d.sizeOptions||["Standard"]).map(s=>`<option>${s}</option>`)}</select>
+              <input type="number" class="form-control" id="qty-${d.id}" value="1" min="1">
+            </div>
+            <button class="btn btn-sm btn-primary w-100" onclick="addToCart('${d.id}')">Add to cart</button>
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(col);
+  });
+}
+
+function addToCart(dishId) {
+  const d = state.dishes.find(x=>x.id===dishId);
+  const qty = Number(document.getElementById('qty-'+dishId).value || 1);
+  const size = document.getElementById('size-'+dishId).value;
+  const cart = getCart(state, user);
+  cart.items.push({ dishId, qty, size });
+  setCart(state, user, cart);
+  notify("Added to cart");
+}
+
+document.getElementById('btnSearch').addEventListener('click', render);
+typeSel.addEventListener('change', render);
+citySel.addEventListener('change', render);
+render();
+</script>
+
+<footer class="footer py-4 mt-5">
+  <div class="container d-flex justify-content-between small">
+    <div>© 2025 Montji Demo</div>
+    <div>
+      <a href="dashboard.html" class="text-decoration-none me-3">Dashboards</a>
+      <a href="https://github.com/" target="_blank" class="text-decoration-none">GitHub</a>
+    </div>
+  </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/app.js"></script>
+<script>AOS.init();</script>
+</body>
+</html>

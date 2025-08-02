@@ -1,0 +1,11 @@
+
+:root {
+  --brand: #f97316;
+}
+.navbar-brand { font-weight: 700; }
+.badge-role { display:none; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.footer { border-top: 1px solid #eee; color: #666; }
+.hero {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+}
